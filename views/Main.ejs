@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1
+        style="
+        font-family: 'Times New Roman', Times, serif;
+        margin-top: 50px;
+        "
+        >URL Shortener</h1>
+        <div class="ui-widget">
+            <label for="recipe">Search for a URL:</label><br />
+            <input id="recipe">
+            <ul id="ingredients"></ul>
+        </div>
+        <form action="/ShortenedURL" method="POST" class="my-4 form-inline" >
+            <label class="sr-only" for="bigurl">URL</label>
+            <input required placeholder="Enter URL" type="url" name="bigurl" id="bigurl" class="col-6">
+            <button class="btn btn-primary col-2" type="submit">Shorten</button>
+        </form>
+        <table class="table table-responsive">
+            <thead class="thead-dark">
+                <tr>
+                    <th class="col-4">URL</th>
+                    <th class="col-2">Shortened URL</th>
+                    <th class="col-2">No. of Clicks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% for (const shortUrl of shortUrls) { %>
+                    <tr>
+                        <td><a href="<%= shortUrl.full %>"><%= shortUrl.full %></a></td>
+                        <td><a href="<%= shortUrl.short %>"><%= shortUrl.short %></a></td>
+                        <td><%= shortUrl.clicks %></td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $("#recipe").autocomplete({
+                source: async function(request, response) {
+                    let data = await fetch(`http://localhost:5000/search?query=${request.term}`)
+                        .then(results => results.json())
+                        .then(results => results.map(result => { 
+                            return { label: result.full, value: result.short, id: result._id };
+                        }));
+                    response(data);
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                    fetch(`http://localhost:5000/get/${ui.item.id}`)
+                        .then(result => result.json())
+                        .then(result => {
+                            $("#ingredients").empty();
+                            result.ingredients.forEach(ingredient => {
+                                $("#ingredients").append(`<li>${ingredient}</li>`);
+                            });
+                        });
+                }
+            });
+        });
+    </script>
+</body>
+
+
+</html>
